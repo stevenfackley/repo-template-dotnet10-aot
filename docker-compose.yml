@@ -1,0 +1,14 @@
+services:
+  {{PROJECT_NAME}}:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PROJECT: {{PROJECT_NAME}}
+    image: {{PROJECT_NAME}}:local
+    container_name: {{PROJECT_NAME}}
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.dev
+    restart: unless-stopped

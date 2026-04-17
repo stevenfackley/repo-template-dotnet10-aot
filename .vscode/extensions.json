@@ -1,0 +1,12 @@
+{
+  "recommendations": [
+    "ms-dotnettools.csdevkit",
+    "ms-dotnettools.csharp",
+    "ms-azuretools.vscode-docker",
+    "ms-vscode.powershell",
+    "editorconfig.editorconfig",
+    "github.vscode-github-actions",
+    "github.vscode-pull-request-github",
+    "eamodio.gitlens"
+  ]
+}

@@ -1,0 +1,23 @@
+bin/
+obj/
+out/
+*.user
+*.suo
+.vs/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+!.env.example
+!.env.dev
+!.env.test
+
+# Test output
+TestResults/
+coverage.*.xml
+*.trx
+
+# Publish
+publish/

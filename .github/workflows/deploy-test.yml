@@ -1,0 +1,37 @@
+name: deploy-test
+
+on:
+  workflow_run:
+    workflows: ["ci"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-push:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      short-sha: ${{ steps.bp.outputs.short-sha }}
+      image-ref: ${{ steps.bp.outputs.image-ref }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: bp
+        uses: stevenfackley/gh-actions/.github/actions/docker-build-push@v1
+        with:
+          image-name: ${{ github.repository }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    needs: build-push
+    # Switch uses: line below to match {{DEPLOY_TARGET}}. Default shown: ec2-ssh.
+    uses: stevenfackley/gh-actions/.github/workflows/deploy-ec2-ssh.yml@v1
+    with:
+      image-ref: ${{ needs.build-push.outputs.image-ref }}
+      environment: test
+      health-url: http://localhost:8080/health
+      container-name: {{PROJECT_NAME}}
+    secrets: inherit

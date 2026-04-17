@@ -1,0 +1,23 @@
+name: triage-issues
+
+# Standalone trigger — if you want post-deploy triage, chain it inside deploy-prod instead.
+on:
+  workflow_dispatch:
+    inputs:
+      before_sha:
+        required: false
+        default: ""
+      after_sha:
+        required: true
+      apply-label:
+        required: false
+        default: testing
+
+jobs:
+  triage:
+    uses: stevenfackley/gh-actions/.github/workflows/triage-issues.yml@v1
+    with:
+      before_sha: ${{ inputs.before_sha }}
+      after_sha: ${{ inputs.after_sha }}
+      apply-label: ${{ inputs.apply-label }}
+    secrets: inherit

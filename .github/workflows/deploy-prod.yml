@@ -1,0 +1,59 @@
+name: deploy-prod
+
+on:
+  push:
+    tags:
+      - "[0-9]{8}_*_Release"
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Tag or SHA to deploy.
+        required: true
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      short-sha: ${{ steps.bp.outputs.short-sha }}
+      image-ref: ${{ steps.bp.outputs.image-ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - id: bp
+        uses: stevenfackley/gh-actions/.github/actions/docker-build-push@v1
+        with:
+          image-name: ${{ github.repository }}
+          push-latest: "true"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  verify:
+    needs: build-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: stevenfackley/gh-actions/.github/actions/verify-image@v1
+        with:
+          image-name: ${{ github.repository }}
+          tag: sha-${{ needs.build-push.outputs.short-sha }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    needs: [build-push, verify]
+    uses: stevenfackley/gh-actions/.github/workflows/deploy-ec2-ssh.yml@v1
+    with:
+      image-ref: ${{ needs.build-push.outputs.image-ref }}
+      environment: production
+      health-url: http://localhost:8080/health
+      container-name: {{PROJECT_NAME}}
+    secrets: inherit
+
+  triage:
+    needs: deploy
+    uses: stevenfackley/gh-actions/.github/workflows/triage-issues.yml@v1
+    with:
+      after_sha: ${{ github.sha }}
+      apply-label: testing
+    secrets: inherit
