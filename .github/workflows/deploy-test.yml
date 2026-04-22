@@ -18,7 +18,7 @@ jobs:
       short-sha: ${{ steps.bp.outputs.short-sha }}
       image-ref: ${{ steps.bp.outputs.image-ref }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - id: bp
         uses: stevenfackley/gh-actions/.github/actions/docker-build-push@v1
         with:

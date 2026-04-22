@@ -20,7 +20,7 @@ jobs:
       short-sha: ${{ steps.bp.outputs.short-sha }}
       image-ref: ${{ steps.bp.outputs.image-ref }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || github.ref }}
       - id: bp
