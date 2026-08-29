@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="src/{{PROJECT_NAME}}/{{PROJECT_NAME}}.csproj" />
+  <Project Path="tests/{{PROJECT_NAME}}.Tests/{{PROJECT_NAME}}.Tests.csproj" />
+</Solution>

@@ -4,10 +4,15 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <PublishAot>false</PublishAot>
+    <!-- Inherited IsAotCompatible=true turns NetArchTest's reflection into IL2026. -->
+    <IsAotCompatible>false</IsAotCompatible>
+    <!-- xunit names read as sentences; CA1707 wants PascalCase. -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="coverlet.collector" />

@@ -6,6 +6,7 @@ namespace {{PROJECT_NAME}}.Tests;
 
 public class ArchitectureTests
 {
+    private const string RootNamespace = "{{PROJECT_NAME}}";
     private static readonly Assembly App = typeof(Program).Assembly;
 
     [Fact]
@@ -26,13 +27,18 @@ public class ArchitectureTests
     [Fact]
     public void No_types_in_root_namespace()
     {
-        var result = Types.InAssembly(App)
-            .That().ResideInNamespace("{{PROJECT_NAME}}")
+        // ResideInNamespace matches sub-namespaces too, so filter to an exact
+        // match: the rule is that only Program sits directly in the root.
+        var offenders = Types.InAssembly(App)
+            .That().ResideInNamespace(RootNamespace)
             .And().AreClasses()
             .And().DoNotHaveName("Program")
-            .GetResult();
+            .GetTypes()
+            .Where(t => t.Namespace == RootNamespace)
+            .Select(t => t.FullName)
+            .ToList();
 
-        Assert.True(result.IsSuccessful || result.LoadedTypes.Count == 0,
-            "Non-Program classes should live in a sub-namespace.");
+        Assert.True(offenders.Count == 0,
+            $"Non-Program classes should live in a sub-namespace: {string.Join(", ", offenders)}");
     }
 }
