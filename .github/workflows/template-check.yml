@@ -1,0 +1,148 @@
+name: template-check
+
+# This repository's own `ci.yml` can never run. It passes an unrendered
+# PROJECT_NAME placeholder to a reusable workflow, so the workflow never
+# compiles into jobs: GitHub reports a 0-job `startup_failure`, which is
+# indistinguishable from an ordinary red X and so gets read as "the templates
+# are always red". Defects therefore ship straight into every repo cut from
+# here, unseen — that is how this template shipped broken for months.
+#
+# This workflow is the substitute. It renders the placeholders the way
+# `_tooling/lib/placeholders.ps1` does, then runs the real toolchain against
+# the rendered copy. It is the only signal this repo has.
+#
+# It is copied into every child repo, where it does nothing: the first step
+# stops the job once no placeholders remain.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: template-check-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  render-and-run:
+    name: Render placeholders, then build the result
+    runs-on: ubuntu-latest
+    env:
+      PROJECT_NAME: TemplateCheck
+      FLAVOR: dotnet10-aot
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Still a template?
+        id: guard
+        run: |
+          # The delimiters are assembled rather than written out, so that the
+          # bootstrap's literal find-and-replace does not rewrite this file's
+          # own patterns when it renders a child repo.
+          OPEN='{''{'; CLOSE='}''}'
+          if grep -rqI "${OPEN}[A-Z_][A-Z_]*${CLOSE}" . --exclude-dir=.git; then
+            echo "template=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No placeholders left — this is a rendered repo, not the template. Nothing to check."
+            echo "template=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Render placeholders into a scratch copy
+        if: steps.guard.outputs.template == 'true'
+        run: |
+          set -euo pipefail
+          OPEN='{''{'; CLOSE='}''}'
+
+          # The runner context is not available in job-level env, so RENDER is
+          # derived here and handed to the later steps through GITHUB_ENV.
+          RENDER="$RUNNER_TEMP/rendered"
+          echo "RENDER=$RENDER" >> "$GITHUB_ENV"
+
+          rm -rf "$RENDER"; mkdir -p "$RENDER"
+          tar --exclude=.git --exclude=node_modules -cf - . | tar -C "$RENDER" -xf -
+
+          # Same six keys, and the same contents-then-paths order, as
+          # _tooling/lib/placeholders.ps1. Keep the two in step.
+          ARGS=()
+          add() { ARGS+=( -e "s|${OPEN}$1${CLOSE}|$2|g" ); }
+          add PROJECT_NAME  "$PROJECT_NAME"
+          add FLAVOR        "$FLAVOR"
+          add DEPLOY_TARGET template-check
+          add AUTHOR        template-check
+          add YEAR          "$(date +%Y)"
+          add DATE          "$(date +%F)"
+
+          grep -rlZIF "$OPEN" "$RENDER" | xargs -0 -r sed -i "${ARGS[@]}"
+
+          find "$RENDER" -depth -name "*${OPEN}PROJECT_NAME${CLOSE}*" -print0 |
+            while IFS= read -r -d '' f; do
+              mv "$f" "$(dirname "$f")/$(basename "$f" | sed "s|${OPEN}PROJECT_NAME${CLOSE}|$PROJECT_NAME|g")"
+            done
+
+      - name: No placeholder may survive the render
+        if: steps.guard.outputs.template == 'true'
+        run: |
+          set -euo pipefail
+          OPEN='{''{'; CLOSE='}''}'
+          if grep -rnI "${OPEN}[A-Z_][A-Z_]*${CLOSE}" "$RENDER"; then
+            echo "::error::The placeholders above survived rendering — either the key is one the bootstrap does not know, or the file is skipped by its binary/extension filter. A repo cut from this template would carry them verbatim, which is exactly how ci.yml got into this state."
+            exit 1
+          fi
+          echo "Clean: every placeholder rendered."
+
+      - name: The rendered workflows must be valid
+        if: steps.guard.outputs.template == 'true'
+        run: |
+          set -euo pipefail
+          # Linting this repo's own workflows would be meaningless: ci.yml holds
+          # a placeholder by design and can never be a valid workflow. What has
+          # to be valid is the file a child repo receives, so the rendered copy
+          # is the thing checked. actionlint reports the original defect
+          # directly -- "expected scalar node for string value but found mapping
+          # node" on the project-name line.
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          "$(go env GOPATH)/bin/actionlint" "$RENDER"/.github/workflows/*.yml
+
+      - uses: actions/setup-dotnet@v6
+        if: steps.guard.outputs.template == 'true'
+        with:
+          global-json-file: global.json
+
+      # Mirrors ci-dotnet.yml's resolve-solution job, which fails the whole
+      # run when nothing matches. This template shipped without a solution
+      # file for months and that job was the thing failing.
+      - name: Resolve solution
+        id: sln
+        if: steps.guard.outputs.template == 'true'
+        working-directory: ${{ env.RENDER }}
+        run: |
+          set -euo pipefail
+          SOL=$(find . -maxdepth 3 \( -name '*.slnx' -o -name '*.sln' \) | head -n1)
+          if [ -z "$SOL" ]; then
+            echo "::error::No .sln or .slnx found. ci-dotnet.yml's resolve-solution job fails on this, so every run in a repo cut from here would be red."
+            exit 1
+          fi
+          echo "solution=${SOL#./}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore
+        if: steps.guard.outputs.template == 'true'
+        working-directory: ${{ env.RENDER }}
+        run: dotnet restore "${{ steps.sln.outputs.solution }}"
+
+      - name: Format (verify)
+        if: steps.guard.outputs.template == 'true'
+        working-directory: ${{ env.RENDER }}
+        run: dotnet format "${{ steps.sln.outputs.solution }}" --verify-no-changes --no-restore
+
+      - name: Build
+        if: steps.guard.outputs.template == 'true'
+        working-directory: ${{ env.RENDER }}
+        run: dotnet build "${{ steps.sln.outputs.solution }}" -c Release --no-restore
+
+      - name: Test
+        if: steps.guard.outputs.template == 'true'
+        working-directory: ${{ env.RENDER }}
+        run: dotnet test "${{ steps.sln.outputs.solution }}" -c Release --no-build
