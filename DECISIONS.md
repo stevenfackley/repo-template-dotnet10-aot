@@ -23,3 +23,14 @@ ADR log. One entry per architectural decision. Append-only; supersede with a new
 - Cold start < 100ms, image ~15MB.
 - Reflection, dynamic code gen restricted — must stay AOT-compatible.
 - No Application Insights SDK (banned by CI); stdout logs only.
+
+## 2026-09-08 — Dependabot sweep: AWSSDK.S3 3.7 → 4.0 (major)
+
+**Status:** accepted (awareness-only stub per saved sweep policy)
+**Context:** Dependabot #10 bumped `AWSSDK.S3` 3.7.411 → 4.0.102.5; restore/build/test and the AOT publish lane were green on the PR head, so it was squash-merged as-is.
+**Decision:** Take the major. The template only wires the client; nothing exercises S3 at test time, so CI green proves compile-compatibility, not runtime behaviour.
+**Consequences:** Things to watch in any service scaffolded from this template:
+- v4 is async-only — the synchronous client methods are gone.
+- Value-typed request/response properties became nullable (`long?`, `bool?`, `DateTime?`); code that read them directly now needs `.Value` or a null check.
+- Uploads send request-integrity checksums by default; S3-compatible stores (R2, MinIO) can reject them — set `RequestChecksumCalculation` / `ResponseChecksumValidation` to `WHEN_REQUIRED` on the client config when not talking to real S3.
+- Keep every `AWSSDK.*` package on the same major; a 3.x Core next to a 4.x service package fails at restore.
