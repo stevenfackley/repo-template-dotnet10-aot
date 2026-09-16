@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-push:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') && github.repository != 'stevenfackley/repo-template-dotnet10-aot' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -27,11 +27,12 @@ jobs:
 
   deploy:
     needs: build-push
+    if: github.repository != 'stevenfackley/repo-template-dotnet10-aot'
     # Switch uses: line below to match {{DEPLOY_TARGET}}. Default shown: ec2-ssh.
     uses: stevenfackley/gh-actions/.github/workflows/deploy-ec2-ssh.yml@v1
     with:
       image-ref: ${{ needs.build-push.outputs.image-ref }}
       environment: test
       health-url: http://localhost:8080/health
-      container-name: {{PROJECT_NAME}}
+      container-name: "{{PROJECT_NAME}}"
     secrets: inherit
