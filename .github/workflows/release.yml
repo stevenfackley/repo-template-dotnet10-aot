@@ -12,9 +12,10 @@ on:
 
 jobs:
   release:
+    if: github.repository != 'stevenfackley/repo-template-dotnet10-aot'
     uses: stevenfackley/gh-actions/.github/workflows/release.yml@v1
     with:
-      project-name: {{PROJECT_NAME}}
+      project-name: "{{PROJECT_NAME}}"
       ref: ${{ inputs.ref }}
       draft: ${{ inputs.draft }}
     secrets: inherit

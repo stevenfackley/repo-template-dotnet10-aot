@@ -11,7 +11,8 @@ concurrency:
 
 jobs:
   ci:
+    if: github.repository != 'stevenfackley/repo-template-dotnet10-aot'
     uses: stevenfackley/gh-actions/.github/workflows/ci-dotnet.yml@v1
     with:
-      project-name: {{PROJECT_NAME}}
+      project-name: "{{PROJECT_NAME}}"
     secrets: inherit
