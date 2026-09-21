@@ -7,7 +7,7 @@
   <ItemGroup>
     <!-- S3-compatible object storage (Cloudflare R2 / MinIO) - AOT-safe -->
     <PackageVersion Include="AWSSDK.S3" Version="4.0.103.3" />
-    <PackageVersion Include="AWSSDK.Extensions.NETCore.Setup" Version="3.7.301" />
+    <PackageVersion Include="AWSSDK.Extensions.NETCore.Setup" Version="4.0.101.4" />
 
     <!-- Test -->
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
