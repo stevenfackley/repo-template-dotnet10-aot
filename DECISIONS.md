@@ -32,7 +32,7 @@ ADR log. One entry per architectural decision. Append-only; supersede with a new
 **Consequences:** Things to watch in any service scaffolded from this template:
 - v4 is async-only — the synchronous client methods are gone.
 - Value-typed request/response properties became nullable (`long?`, `bool?`, `DateTime?`); code that read them directly now needs `.Value` or a null check.
-- Uploads send request-integrity checksums by default; S3-compatible stores (R2, MinIO) can reject them — set `RequestChecksumCalculation` / `ResponseChecksumValidation` to `WHEN_REQUIRED` on the client config when not talking to real S3.
+- Uploads send request-integrity checksums by default; S3-compatible stores (R2, RustFS) can reject them — set `RequestChecksumCalculation` / `ResponseChecksumValidation` to `WHEN_REQUIRED` on the client config when not talking to real S3.
 - Keep every `AWSSDK.*` package on the same major; a 3.x Core next to a 4.x service package fails at restore.
 
 ## 2026-09-22 — Dependabot sweep: AWSSDK.Extensions.NETCore.Setup 3.7 → 4.0 (major)

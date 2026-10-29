@@ -10,7 +10,7 @@ Open an issue using the `Ops incident` template. Severity per template.
 ## 3. Investigate
 - `docker logs <container> --tail 200`
 - `gh run list --status failure --limit 5` — recent CI / deploy history
-- `kubectl describe pod` (K3s) or EC2 `journalctl -u docker`
+- EC2: `journalctl -u docker`
 
 ## 4. Resolve
 - Patch, test, deploy, verify.

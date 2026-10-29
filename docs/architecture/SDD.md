@@ -10,7 +10,7 @@
 <!-- Stores, schema location, migrations. -->
 
 ## Object storage (opt-in)
-S3-compatible via `AWSSDK.S3` (AOT-compatible). Cloudflare R2 in prod, MinIO locally.
+S3-compatible via `AWSSDK.S3` (AOT-compatible). Cloudflare R2 in prod, RustFS locally.
 Wiring: `services.AddS3Storage(builder.Configuration)` in `Program.cs`. Options bind from `S3_*` env vars. `IAmazonS3` is only registered when `S3Options.IsConfigured` — features must guard on that.
 
 ## Auth

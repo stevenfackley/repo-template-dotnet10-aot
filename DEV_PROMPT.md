@@ -36,5 +36,5 @@ gh workflow run deploy-test.yml                  # manual test deploy
 ## Image / release conventions
 
 - `sha-{SHORT_SHA}` — test
-- `prod-{SHA}`      — prod (immutable)
+- `sha-{SHORT_SHA}` + `latest` — prod (deployed by immutable digest)
 - tag `YYYYMMDD_{{PROJECT_NAME}}_Release` — release cut
