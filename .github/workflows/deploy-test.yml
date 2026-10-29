@@ -8,8 +8,11 @@ on:
   workflow_dispatch:
 
 jobs:
+  # CI-cost guard: a Dependabot auto-merge was fully checked on its PR; skipping the root
+  # job here skips the dependent deploy. Those bumps ship with the next human merge or a
+  # manual dispatch. Non-workflow_run events are never skipped.
   build-push:
-    if: ${{ (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') && github.repository != 'stevenfackley/repo-template-dotnet10-aot' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success') && github.repository != 'stevenfackley/repo-template-dotnet10-aot' && (github.event_name != 'workflow_run' || github.event.workflow_run.head_commit.author.username != 'dependabot[bot]') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
