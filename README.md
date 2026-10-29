@@ -11,8 +11,6 @@ dotnet test
 dotnet run --project src/{{PROJECT_NAME}}
 ```
 
-Full dev-env setup: see `C:\Users\steve\projects\DEV_SETUP_GUIDE.md`.
-
 ## Docker (local)
 
 ```bash
@@ -33,12 +31,12 @@ Tag `YYYYMMDD_{{PROJECT_NAME}}_Release` → `.github/workflows/deploy-prod.yml` 
 src/{{PROJECT_NAME}}/          minimal API entry
 tests/{{PROJECT_NAME}}.Tests/  xUnit + NetArchTest
 docs/                          product, architecture, user, runbooks
-scripts/scan-secrets.ps1       invoked by CI secret-scan
+scripts/scan-secrets.ps1       local secret scan (run by /ship); CI uses the shared gh-actions secret-scan
 ```
 
 ## Conventions
 
-- Image tags: `sha-{SHORT_SHA}` (test), `prod-{SHA}` (prod).
+- Image tags: `sha-{SHORT_SHA}` (test); `sha-{SHORT_SHA}` + `latest` (prod, deployed by immutable digest).
 - Release tags: `YYYYMMDD_{{PROJECT_NAME}}_Release`.
 - Commits: Conventional Commits.
 - No telemetry SDKs — enforced by `secret-scan.yml`.
